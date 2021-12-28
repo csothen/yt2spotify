@@ -13,5 +13,5 @@ func Connect(config *config.Config) (*sql.DB, error) {
 }
 
 func buildConnectionURL(config *config.Config) string {
-	return fmt.Sprintf("%s:%s@tcp(127.0.0.1:3306)/%s", config.DBUser, config.DBPassword, config.DBName)
+	return fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true", config.DBUser, config.DBPassword, config.DBURL, config.DBName)
 }

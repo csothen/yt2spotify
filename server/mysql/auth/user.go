@@ -20,7 +20,7 @@ func NewMySQLRepository(db *sql.DB) *MySQLRepository {
 func (r *MySQLRepository) GetAll() []*data.User {
 	users := []*data.User{}
 
-	results, err := r.db.Query("SELECT id, access_token, refresh_token, token_type, expires_in FROM users")
+	results, err := r.db.Query("SELECT session_id, access_token, refresh_token, token_type, expires_in FROM users")
 	if err != nil {
 		return users
 	}
@@ -28,7 +28,7 @@ func (r *MySQLRepository) GetAll() []*data.User {
 	for results.Next() {
 		var u data.User
 
-		err := results.Scan(&u.ID, &u.AccessToken, &u.RefreshToken, &u.TokenType, &u.ExpiresIn)
+		err := results.Scan(&u.SessionID, &u.AccessToken, &u.RefreshToken, &u.TokenType, &u.ExpiresIn)
 		if err != nil {
 			return users
 		}
@@ -38,12 +38,12 @@ func (r *MySQLRepository) GetAll() []*data.User {
 	return users
 }
 
-func (r *MySQLRepository) GetByID(id string) (*data.User, error) {
-	result := r.db.QueryRow("SELECT id, access_token, refresh_token, token_type, expires_in FROM users WHERE id = ?", id)
+func (r *MySQLRepository) GetBySessionID(id string) (*data.User, error) {
+	result := r.db.QueryRow("SELECT session_id, access_token, refresh_token, token_type, expires_in FROM users WHERE session_id = ?", id)
 
 	var u data.User
 
-	err := result.Scan(&u.ID, &u.AccessToken, &u.RefreshToken, &u.TokenType, &u.ExpiresIn)
+	err := result.Scan(&u.SessionID, &u.AccessToken, &u.RefreshToken, &u.TokenType, &u.ExpiresIn)
 	if err != nil {
 		return nil, err
 	}
@@ -52,8 +52,8 @@ func (r *MySQLRepository) GetByID(id string) (*data.User, error) {
 }
 
 func (r *MySQLRepository) Upsert(u *data.User) (*data.User, error) {
-	id := u.ID
-	_, err := r.GetByID(id)
+	id := u.SessionID
+	_, err := r.GetBySessionID(id)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			return nil, err
@@ -66,7 +66,7 @@ func (r *MySQLRepository) Upsert(u *data.User) (*data.User, error) {
 }
 
 func (r *MySQLRepository) Delete(id string) error {
-	res, err := r.db.Exec("DELETE FROM users WHERE id = ?", id)
+	res, err := r.db.Exec("DELETE FROM users WHERE session_id = ?", id)
 	if err != nil {
 		return err
 	}
@@ -84,29 +84,24 @@ func (r *MySQLRepository) Delete(id string) error {
 }
 
 func (r *MySQLRepository) create(u *data.User) (*data.User, error) {
-	res, err := r.db.Exec("INSERT INTO users(id, access_token, refresh_token, token_type, expires_in) VALUES (?, ?, ?, ?, ?)", u.ID, u.AccessToken, u.RefreshToken, u.TokenType, u.ExpiresIn)
+	_, err := r.db.Exec("INSERT INTO users(session_id, access_token, refresh_token, token_type, expires_in) VALUES (?, ?, ?, ?, ?)", u.SessionID, u.AccessToken, u.RefreshToken, u.TokenType, u.ExpiresIn)
 	if err != nil {
 		return nil, err
 	}
 
-	id, err := res.LastInsertId()
-	if err != nil {
-		return nil, err
-	}
-
-	return r.GetByID(fmt.Sprintf("%d", id))
+	return r.GetBySessionID(u.SessionID)
 }
 
 func (r *MySQLRepository) update(u *data.User) (*data.User, error) {
-	stmt, err := r.db.Prepare("UPDATE users SET access_token = ?, refresh_token = ?, token_type = ?, expires_in = ? WHERE id = ?")
+	stmt, err := r.db.Prepare("UPDATE users SET access_token = ?, refresh_token = ?, token_type = ?, expires_in = ? WHERE session_id = ?")
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = stmt.Exec(u.AccessToken, u.RefreshToken, u.TokenType, u.ExpiresIn, u.ID)
+	_, err = stmt.Exec(u.AccessToken, u.RefreshToken, u.TokenType, u.ExpiresIn, u.SessionID)
 	if err != nil {
 		return nil, err
 	}
 
-	return r.GetByID(u.ID)
+	return r.GetBySessionID(u.SessionID)
 }

@@ -10,31 +10,28 @@ type Config struct {
 	BindAddress    string
 	ClientLocation string
 
-	ClientID     string
-	ClientSecret string
-	RedirectURI  string
+	SpotifyClientID     string
+	SpotifyClientSecret string
+	SpotifyRedirectURI  string
 
+	DBURL      string
 	DBUser     string
 	DBPassword string
 	DBName     string
 }
 
 func New(l *log.Logger) *Config {
-	err := env.Load(".env")
-	if err != nil {
-		l.Println(err)
-	}
-
 	return &Config{
-		BindAddress:    env.String("BIND_ADDRESS", ":8080"),
-		ClientLocation: env.String("CLIENT_LOCATION", "http://localhost:3000"),
+		BindAddress:    env.String("BIND_ADDRESS", "8080"),
+		ClientLocation: env.String("FE_URL", "http://localhost:3000"),
 
-		ClientID:     env.String("CLIENT_ID", ""),
-		ClientSecret: env.String("CLIENT_SECRET", ""),
-		RedirectURI:  env.String("REDIRECT_URI", "http://localhost:3000/callback"),
+		SpotifyClientID:     env.String("SPOTIFY_CLIENT_ID", ""),
+		SpotifyClientSecret: env.String("SPOTIFY_CLIENT_SECRET", ""),
+		SpotifyRedirectURI:  env.String("SPOTIFY_REDIRECT_URI", "http://localhost:8080/auth/spotify/redirect"),
 
-		DBUser:     env.String("MYSQL_USER", "username"),
-		DBPassword: env.String("MYSQL_PASSWORD", "password"),
-		DBName:     env.String("MYSQL_NAME", "test"),
+		DBURL:      env.String("DB_URL", "127.0.0.1:3306"),
+		DBName:     env.String("DB_NAME", "test"),
+		DBUser:     env.String("DB_USER", "username"),
+		DBPassword: env.String("DB_PASSWORD", "password"),
 	}
 }

@@ -5,17 +5,22 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/csothen/yt2spotify/data"
 	"github.com/csothen/yt2spotify/services/auth"
+	"github.com/csothen/yt2spotify/services/sessions"
+	gsessions "github.com/gorilla/sessions"
 )
 
 type Auth struct {
 	l       *log.Logger
+	store   *sessions.CookieStore
 	service *auth.SpotifyAuthService
 }
 
-func NewAuth(l *log.Logger, s *auth.SpotifyAuthService) *Auth {
+func NewAuth(l *log.Logger, s *auth.SpotifyAuthService, store *sessions.CookieStore) *Auth {
 	return &Auth{
 		l:       l,
+		store:   store,
 		service: s,
 	}
 }
@@ -39,13 +44,27 @@ func (a *Auth) GetAuthURL(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Auth) HandleSpotifyCallback(rw http.ResponseWriter, r *http.Request) {
+	session, _ := a.store.Get(r)
 	q := r.URL.Query()
-	location, err := a.service.HandleCallback(q.Get("code"), q.Get("error"))
+
+	cbData, err := a.service.HandleCallback(session.ID, q.Get("code"), q.Get("error"))
 	if err != nil {
 		a.l.Println(err)
 		http.Error(rw, "Error authenticating", http.StatusInternalServerError)
 		return
 	}
 
-	http.Redirect(rw, r, location, http.StatusFound)
+	http.SetCookie(rw, gsessions.NewCookie(session.Name(), cbData.SessionData, session.Options))
+	http.Redirect(rw, r, cbData.Location, http.StatusFound)
+}
+
+func (a *Auth) CheckAuthorization(rw http.ResponseWriter, r *http.Request) {
+	session, _ := a.store.Get(r)
+
+	isAuth := a.service.IsAuthenticated(session.ID)
+	err := data.ToJSON(isAuth, rw)
+	if err != nil {
+		a.l.Println(err)
+		http.Error(rw, "Error checking authorization", http.StatusInternalServerError)
+	}
 }
