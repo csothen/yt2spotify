@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  client:
+    container_name: ${APP_NAME}_client
+    restart: always
+    build:
+      context: client
+      dockerfile: Dockerfile
+    depends_on:
+      - server
+    environment:
+      - BIND_ADDRESS=$CLIENT_BIND_ADDRESS
+      - BE_URL=http://server:${SERVER_BIND_ADDRESS}
+    ports:
+      - '3000:${CLIENT_BIND_ADDRESS}'
+
+  server:
+    container_name: ${APP_NAME}_server
+    restart: always
+    build:
+      context: server
+      dockerfile: Dockerfile
+    depends_on:
+      - mysql
+    environment:
+      - BIND_ADDRESS=$SERVER_BIND_ADDRESS
+      - FE_URL=${CLIENT_HOST}:${CLIENT_BIND_ADDRESS}
+      - DB_URL=mysql:3306
+      - DB_USER=$MYSQL_DB_USER
+      - DB_PASSWORD=$MYSQL_DB_PASSWORD
+      - DB_NAME=$MYSQL_DB_NAME
+      - SPOTIFY_CLIENT_ID=$SPOTIFY_CLIENT_ID
+      - SPOTIFY_CLIENT_SECRET=$SPOTIFY_CLIENT_SECRET
+      - SPOTIFY_REDIRECT_URI=$SPOTIFY_REDIRECT_URI
+    ports:
+      - '8080:${SERVER_BIND_ADDRESS}'
+    networks:
+      - backend
+
+  mysql:
+    container_name: ${APP_NAME}_db
+    build:
+      context: db
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      MYSQL_DATABASE: $MYSQL_DB_NAME
+      MYSQL_USER: $MYSQL_DB_USER
+      MYSQL_PASSWORD: $MYSQL_DB_PASSWORD
+      MYSQL_ROOT_PASSWORD: $MYSQL_DB_ROOT_PASSWORD
+    ports:
+      - '3306:3306'
+    volumes:
+      - db-data:/data/db
+    networks:
+      - backend
+
+volumes:
+  db-data:
+
+networks:
+  backend:
