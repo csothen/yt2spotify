@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/csothen/yt2spotify/data"
 	"github.com/csothen/yt2spotify/services/auth"
 	"github.com/csothen/yt2spotify/services/sessions"
+	"github.com/csothen/yt2spotify/utils"
 	gsessions "github.com/gorilla/sessions"
 )
 
@@ -62,7 +62,7 @@ func (a *Auth) CheckAuthorization(rw http.ResponseWriter, r *http.Request) {
 	session, _ := a.store.Get(r)
 
 	isAuth := a.service.IsAuthenticated(session.ID)
-	err := data.ToJSON(isAuth, rw)
+	err := utils.ToJSON(isAuth, rw)
 	if err != nil {
 		a.l.Println(err)
 		http.Error(rw, "Error checking authorization", http.StatusInternalServerError)

@@ -7,31 +7,45 @@ import (
 )
 
 type Config struct {
-	BindAddress    string
-	ClientLocation string
+	ServerConfig
+	SpotifyConfig
+	DbConfig
+}
 
-	SpotifyClientID     string
-	SpotifyClientSecret string
-	SpotifyRedirectURI  string
+type ServerConfig struct {
+	BindAddress string
+	ClientHost  string
+}
 
-	DBURL      string
-	DBUser     string
-	DBPassword string
-	DBName     string
+type SpotifyConfig struct {
+	ClientID     string
+	ClientSecret string
+	RedirectURI  string
+}
+
+type DbConfig struct {
+	Url      string
+	User     string
+	Password string
+	Name     string
 }
 
 func New(l *log.Logger) *Config {
 	return &Config{
-		BindAddress:    env.String("BIND_ADDRESS", "8080"),
-		ClientLocation: env.String("FE_URL", "http://localhost:3000"),
-
-		SpotifyClientID:     env.String("SPOTIFY_CLIENT_ID", ""),
-		SpotifyClientSecret: env.String("SPOTIFY_CLIENT_SECRET", ""),
-		SpotifyRedirectURI:  env.String("SPOTIFY_REDIRECT_URI", "http://localhost:8080/auth/spotify/redirect"),
-
-		DBURL:      env.String("DB_URL", "127.0.0.1:3306"),
-		DBName:     env.String("DB_NAME", "test"),
-		DBUser:     env.String("DB_USER", "username"),
-		DBPassword: env.String("DB_PASSWORD", "password"),
+		ServerConfig: ServerConfig{
+			BindAddress: env.String("BIND_ADDRESS", "8080"),
+			ClientHost:  env.String("CLIENT_HOST", "http://localhost:3000"),
+		},
+		SpotifyConfig: SpotifyConfig{
+			ClientID:     env.String("SPOTIFY_CLIENT_ID", ""),
+			ClientSecret: env.String("SPOTIFY_CLIENT_SECRET", ""),
+			RedirectURI:  env.String("SPOTIFY_REDIRECT_URI", "http://localhost:8080/auth/spotify/redirect"),
+		},
+		DbConfig: DbConfig{
+			Url:      env.String("DB_URL", "127.0.0.1:3306"),
+			Name:     env.String("DB_NAME", "test"),
+			User:     env.String("DB_USER", "username"),
+			Password: env.String("DB_PASSWORD", "password"),
+		},
 	}
 }

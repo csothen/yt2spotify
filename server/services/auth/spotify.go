@@ -16,6 +16,7 @@ import (
 	"github.com/csothen/yt2spotify/config"
 	"github.com/csothen/yt2spotify/data"
 	"github.com/csothen/yt2spotify/mysql/auth"
+	"github.com/csothen/yt2spotify/utils"
 	"github.com/gorilla/securecookie"
 )
 
@@ -27,12 +28,14 @@ const (
 
 type SpotifyAuthService struct {
 	config *config.Config
+	scfg   *config.SpotifyConfig
 	repo   *auth.MySQLRepository
 }
 
 func NewSpotifyAuthService(c *config.Config, db *sql.DB) *SpotifyAuthService {
 	return &SpotifyAuthService{
 		config: c,
+		scfg:   &c.SpotifyConfig,
 		repo:   auth.NewMySQLRepository(db),
 	}
 }
@@ -46,9 +49,9 @@ func (s *SpotifyAuthService) BuildAuthURL() (*data.AuthURL, error) {
 	query := authURL.Query()
 	query.Set("scope", spotifyScopes)
 	query.Set("response_type", "code")
-	query.Set("client_id", s.config.SpotifyClientID)
-	query.Set("client_secret", s.config.SpotifyClientSecret)
-	query.Set("redirect_uri", s.config.SpotifyRedirectURI)
+	query.Set("client_id", s.scfg.ClientID)
+	query.Set("client_secret", s.scfg.ClientSecret)
+	query.Set("redirect_uri", s.scfg.RedirectURI)
 
 	authURL.RawQuery = query.Encode()
 
@@ -67,14 +70,14 @@ func (s *SpotifyAuthService) HandleCallback(id, code, qErr string) (*data.Callba
 	payload := url.Values{}
 	payload.Set("grant_type", "authorization_code")
 	payload.Set("code", code)
-	payload.Set("redirect_uri", s.config.SpotifyRedirectURI)
+	payload.Set("redirect_uri", s.scfg.RedirectURI)
 
 	req, err := http.NewRequest(http.MethodPost, "https://accounts.spotify.com/api/token", strings.NewReader(payload.Encode()))
 	if err != nil {
 		return nil, err
 	}
 
-	b64Creds := base64.RawStdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", s.config.SpotifyClientID, s.config.SpotifyClientSecret)))
+	b64Creds := base64.RawStdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", s.scfg.ClientID, s.scfg.ClientSecret)))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Add("Content-Length", strconv.Itoa(len(payload.Encode())))
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", b64Creds))
@@ -89,7 +92,7 @@ func (s *SpotifyAuthService) HandleCallback(id, code, qErr string) (*data.Callba
 	}
 
 	d := &data.SpotifyAPITokenResponse{}
-	err = data.FromJSON(d, resp.Body)
+	err = utils.FromJSON(d, resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +124,7 @@ func (s *SpotifyAuthService) HandleCallback(id, code, qErr string) (*data.Callba
 
 	cbData := &data.CallbackData{
 		SessionData: id,
-		Location:    fmt.Sprintf("%s/start", s.config.ClientLocation),
+		Location:    fmt.Sprintf("%s/start", s.config.ServerConfig.ClientHost),
 	}
 
 	return cbData, nil
@@ -141,7 +144,7 @@ func (s *SpotifyAuthService) GetUserData(token string) (*data.SpotifyUser, error
 	}
 
 	d := &data.SpotifyUser{}
-	err = data.FromJSON(d, resp.Body)
+	err = utils.FromJSON(d, resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -183,8 +186,8 @@ func (s *SpotifyAuthService) refreshToken(user *data.User) error {
 	payload, err := json.Marshal(&data.SpotifyAPITokenBody{
 		GrantType:    "refresh_token",
 		RefreshToken: user.RefreshToken,
-		ClientID:     s.config.SpotifyClientID,
-		ClientSecret: s.config.SpotifyClientSecret,
+		ClientID:     s.scfg.ClientID,
+		ClientSecret: s.scfg.ClientSecret,
 	})
 	if err != nil {
 		return err
@@ -196,7 +199,7 @@ func (s *SpotifyAuthService) refreshToken(user *data.User) error {
 	}
 
 	d := &data.SpotifyAPITokenResponse{}
-	err = data.FromJSON(d, resp.Body)
+	err = utils.FromJSON(d, resp.Body)
 	if err != nil {
 		return err
 	}
