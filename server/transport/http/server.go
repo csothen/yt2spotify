@@ -47,8 +47,8 @@ func NewServer(config config.Configuration, l hclog.Logger) (*Server, error) {
 	}
 
 	// Initialize integrations
-	spotifyI := integrations.NewSpotifyIntegration(l)
-	youtubeI := integrations.NewYoutubeIntegration(l)
+	spotifyI := integrations.NewSpotifyIntegration(l, config)
+	youtubeI := integrations.NewYoutubeIntegration(l, config)
 
 	intgs := map[models.Provider]integrations.Integration{
 		models.Spotify: spotifyI,

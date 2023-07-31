@@ -24,7 +24,7 @@ type SpotifyPlaylist struct {
 	Count       uint
 	Owner       string
 	Image       Image
-	Tracks      []*SpotifyTrack
+	Tracks      []*Track
 }
 
 type YoutubePlaylist struct {
@@ -36,7 +36,7 @@ type YoutubePlaylist struct {
 	Count       uint
 	Owner       string
 	Image       Image
-	Tracks      []*YoutubeTrack
+	Tracks      []*Track
 }
 
 func (sp *SpotifyPlaylist) Provider() Provider {
