@@ -1,0 +1,35 @@
+{{define "convert-playlist-form"}}
+<div class="convert-playlist-form">
+    <form hx-post="/playlist/load" hx-target="#playlist-list" hx-swap="afterbegin">
+        <label>Source</label>
+        <select name="source">
+            {{range .Sources}}
+            <option value="{{ .Value }}">{{ .Name }}</option>
+            {{end}}
+        </select>
+        <input type="text" id="url" name="url" required minlength="4" size="10" />
+        <button type="submit">Start</button>
+    </form>
+</div>
+{{end}}
+
+{{define "convert-playlist-button"}}
+<div class="convert-playlist-button">
+    <label>Convert a playlist</label>
+    <img class="button" src="assets/plus.svg" alt="Start" width="20px" height="20px"
+        hx-target=".convert-playlist-button" hx-get="/convert/start" />
+</div>
+{{end}}
+
+{{define "playlists-list"}}
+<div id="playlist-list">
+    {{range .Playlists}}
+    {{ template "playlist" . }}
+    {{end}}
+</div>
+{{end}}
+
+{{define "playlist"}}
+<div>{{ .Source.Name }}</div>
+<div>{{ .Name }}</div>
+{{end}}
