@@ -24,7 +24,16 @@
 {{end}}
 
 {{define "header"}}
-<div>Header</div>
+<div class="logo">
+    <img src="/assets/trackswap.png" alt="Track Swap" width="250px">
+</div>
+<div class="oauth-container flex-row">
+    {{range .Sources}}
+    <div class="oauth" hx-post="/oauth/{{.Value}}">
+        <img src="/assets/{{.Value}}.png" alt="{{.Name}}" width="100px">
+    </div>
+    {{end}}
+</div>
 {{end}}
 
 {{define "footer"}}

@@ -4,12 +4,15 @@ import (
 	"log"
 	"text/template"
 
+	"github.com/csothen/env"
 	"github.com/csothen/yt2spotify/pkg/endpoints"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
+	env.Load(".env")
+
 	tmpl, err := template.ParseGlob("public/views/*.html")
 	if err != nil {
 		log.Fatalf("couldn't initialize templates: %e\n", err)
@@ -22,9 +25,14 @@ func main() {
 	e.Static("/css", "css")
 	e.Static("/assets", "assets")
 
-	e.GET("/", endpoints.HandleIndex)
-	e.GET("/convert/start", endpoints.HandleStartConvertion)
-	e.POST("/playlist/load", endpoints.HandlePlaylistLoad)
+	handler := endpoints.NewRequestHandler()
+
+	e.GET("/", handler.HandleIndex)
+	e.GET("/convert/start", handler.HandleStartConvertion)
+	e.POST("/playlist/load", handler.HandlePlaylistLoad)
+
+	e.POST("/oauth/:source", handler.HandleOAuth)
+	e.GET("/oauth/:source/callback", handler.HandleCallback)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }

@@ -28,10 +28,10 @@ func GetPlaylistView(source string, url string) (*PlaylistView, error) {
 
 	switch source {
 	case core.SpotifySource.Value:
-		playlist, err = integrations.NewSpotify().LoadPlaylist(url)
+		playlist, err = integrations.Spotify.LoadPlaylist(url)
 		break
 	case core.YoutubeSource.Value:
-		playlist, err = integrations.NewYoutube().LoadPlaylist(url)
+		playlist, err = integrations.Youtube.LoadPlaylist(url)
 		break
 	default:
 		err = fmt.Errorf("invalid source '%s'", source)
