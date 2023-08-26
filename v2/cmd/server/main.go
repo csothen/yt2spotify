@@ -4,18 +4,27 @@ import (
 	"log"
 	"text/template"
 
-	"github.com/csothen/env"
+	"github.com/csothen/yt2spotify/pkg/configuration"
 	"github.com/csothen/yt2spotify/pkg/endpoints"
+	"github.com/csothen/yt2spotify/pkg/integrations"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
-	env.Load(".env")
+	config, err := configuration.Load("config.yaml")
+	if err != nil {
+		log.Fatalf("could not load the configuration: %e\n", err)
+	}
 
 	tmpl, err := template.ParseGlob("public/views/*.html")
 	if err != nil {
 		log.Fatalf("couldn't initialize templates: %e\n", err)
+	}
+
+	err = integrations.Configure(config)
+	if err != nil {
+		log.Fatalf("could not configure the integrations: %e\n", err)
 	}
 
 	e := echo.New()
@@ -34,5 +43,5 @@ func main() {
 	e.POST("/oauth/:source", handler.HandleOAuth)
 	e.GET("/oauth/:source/callback", handler.HandleCallback)
 
-	e.Logger.Fatal(e.Start(":8080"))
+	e.Logger.Fatal(e.Start(config.Server.Port))
 }

@@ -4,28 +4,35 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/csothen/env"
+	"github.com/csothen/yt2spotify/pkg/configuration"
 	"github.com/csothen/yt2spotify/pkg/core"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/youtube/v3"
 )
 
-var Youtube = newYoutube()
+var Youtube *YoutubeIntegration
 
 type YoutubeIntegration struct {
 	config *oauth2.Config
 }
 
-func newYoutube() *YoutubeIntegration {
-	config := &oauth2.Config{
-		ClientID:     env.String("YOUTUBE_CLIENT_ID", ""),
-		ClientSecret: env.String("YOUTUBE_CLIENT_SECRET", ""),
+func configureYoutube(config *configuration.Configuration) error {
+	youtubeConfig, ok := config.Integrations["youtube"]
+	if !ok {
+		return fmt.Errorf("could not find integration configuration for key 'youtube'")
+	}
+
+	oauthConfig := &oauth2.Config{
+		ClientID:     youtubeConfig.ClientID,
+		ClientSecret: youtubeConfig.ClientSecret,
 		Scopes:       []string{youtube.YoutubeScope},
 		Endpoint:     google.Endpoint,
 	}
 
-	return &YoutubeIntegration{config}
+	Youtube = &YoutubeIntegration{oauthConfig}
+
+	return nil
 }
 
 func (y *YoutubeIntegration) authenticate(code string) error {
