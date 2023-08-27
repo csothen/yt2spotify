@@ -28,6 +28,7 @@ func configureYoutube(config *configuration.Configuration) error {
 		ClientSecret: youtubeConfig.ClientSecret,
 		Scopes:       []string{youtube.YoutubeScope},
 		Endpoint:     google.Endpoint,
+		RedirectURL:  fmt.Sprintf("http://localhost%s/oauth/%s/callback", config.Server.Port, core.YoutubeSource.Value),
 	}
 
 	Youtube = &YoutubeIntegration{oauthConfig}
@@ -35,14 +36,8 @@ func configureYoutube(config *configuration.Configuration) error {
 	return nil
 }
 
-func (y *YoutubeIntegration) authenticate(code string) error {
-	token, err := y.config.Exchange(context.Background(), code)
-	if err != nil {
-		return err
-	}
-
-	saveToken(core.YoutubeSource, token)
-	return nil
+func (y *YoutubeIntegration) authenticate(code string) (*oauth2.Token, error) {
+	return y.config.Exchange(context.Background(), code)
 }
 
 func (y *YoutubeIntegration) getAuthenticationURL() string {

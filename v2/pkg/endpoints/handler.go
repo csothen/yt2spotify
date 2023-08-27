@@ -1,6 +1,7 @@
 package endpoints
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/csothen/yt2spotify/pkg/integrations"
@@ -22,7 +23,7 @@ func (h *RequestHandler) HandleIndex(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "")
 	}
 
-	return c.Render(200, "base", view)
+	return c.Render(http.StatusOK, "base", view)
 }
 
 func (h *RequestHandler) HandlePlaylistLoad(c echo.Context) error {
@@ -52,18 +53,21 @@ func (h *RequestHandler) HandleOAuth(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "")
 	}
 
-	return c.Redirect(http.StatusTemporaryRedirect, url)
+	c.Response().Header().Set("HX-Redirect", url)
+	return c.String(http.StatusOK, url)
 }
 
 func (h *RequestHandler) HandleCallback(c echo.Context) error {
 	source := c.Param("source")
 	code := c.QueryParam("code")
 
-	err := integrations.Authenticate(source, code)
+	token, err := integrations.Authenticate(source, code)
 	if err != nil {
 		c.Logger().Error("failed to authenticate: %+v", err)
 		return c.String(http.StatusInternalServerError, "")
 	}
 
-	return c.Redirect(http.StatusOK, "/")
+	fmt.Printf("token from source '%s' -> '%s'\n", source, token.AccessToken)
+
+	return c.Redirect(http.StatusPermanentRedirect, c.Request().Host)
 }

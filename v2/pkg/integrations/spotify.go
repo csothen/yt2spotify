@@ -32,6 +32,7 @@ func configureSpotify(config *configuration.Configuration) error {
 		ClientSecret: spotifyConfig.ClientSecret,
 		Scopes:       []string{spotifyModifyPlaylistsScope, spotifyReadPlaylistsScope},
 		Endpoint:     spotify.Endpoint,
+		RedirectURL:  fmt.Sprintf("http://localhost%s/oauth/%s/callback", config.Server.Port, core.SpotifySource.Value),
 	}
 
 	Spotify = &SpotifyIntegration{oauthConfig}
@@ -39,14 +40,8 @@ func configureSpotify(config *configuration.Configuration) error {
 	return nil
 }
 
-func (s *SpotifyIntegration) authenticate(code string) error {
-	token, err := s.config.Exchange(context.Background(), code)
-	if err != nil {
-		return err
-	}
-
-	saveToken(core.SpotifySource, token)
-	return nil
+func (s *SpotifyIntegration) authenticate(code string) (*oauth2.Token, error) {
+	return s.config.Exchange(context.Background(), code)
 }
 
 func (s *SpotifyIntegration) getAuthenticationURL() string {

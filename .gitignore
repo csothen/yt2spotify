@@ -1,4 +1,5 @@
 .env
 .vscode
+config.yaml
 
 db/init.sql
